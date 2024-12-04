@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: full-stack-ecommerce
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # Spring Boot Application
+  springboot:
+    build:
+      context: ./springboot-ecommerce
+      dockerfile: Dockerfile
+    container_name: springboot-container
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/full-stack-ecommerce
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: mypassword
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Angular Application
+  angular:
+    build:
+      context: ./angular-ecommerce
+      dockerfile: Dockerfile
+    container_name: angular-container
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "4200:80" # Maps Nginx to host port 4200
+    depends_on:
+      - springboot
+    networks:
+      - app-network
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
